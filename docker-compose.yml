@@ -2,42 +2,48 @@ version: '3'
 services:
 
   nginx:
-    image: tonyyb/laravel-nginx:latest
+    image: tonyyb/laravel-nginx:${NGINX_VERSION}
+    container_name: nginx
     restart: unless-stopped
     tty: true
     ports:
-      - "8080:80"
-      - "8043:443"
+      - "80:80"
+      # - "8043:443"
     volumes:
-      - ./:/var/www
+      - ${FOLDER}:/var/www
     networks:
       - app-network
 
   php-fpm:
-    image: tonyyb/laravel-php:7.2
+    build:
+      context: ./php/${PHP_VERSION}
     restart: unless-stopped
+    container_name: php
     tty: true
     volumes:
-      - ./:/var/www
+      - ${FOLDER}:/var/www
+      - ./php/custom.ini:/usr/local/etc/php/conf.d/custom.ini
     networks:
       - app-network
     environment:
-      APP_ENV: "production"
-      APP_DEBUG: "false"
+      APP_ENV: "local"
+      APP_DEBUG: "true"
       DB_CONNECTION: "mysql"
       DB_HOST: "mysql"
       DB_DATABASE: ${MYSQL_DATABASE}
-      DB_USERNAME: ${MYSQL_USER}
-      DB_PASSWORD: ${MYSQL_PASSWORD}
+      DB_USERNAME: 'root'
+      DB_PASSWORD: '.'
+      COMPOSER_MEMORY_LIMIT: -1
 
   mysql:
-    image: mysql:5.7
+    image: mysql:${MYSQL_VERSION}
+    container_name: mysql
     restart: unless-stopped
     tty: true
     ports:
-      - "8006:3306"
+      - "3306:3306"
     volumes:
-      - mysqldata:/var/lib/mysql
+      - ./mysql/data:/var/lib/mysql
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_USER: ${MYSQL_USER}
@@ -45,6 +51,16 @@ services:
       MYSQL_DATABASE: ${MYSQL_DATABASE}
     networks:
       - app-network
+
+  redis:
+      image: redis:${REDIS_VERSION}
+      container_name: redis
+      restart: unless-stopped
+      tty: true
+      ports:
+        - "6379:6379"
+      networks:
+        - app-network
 
 volumes:
   mysqldata:

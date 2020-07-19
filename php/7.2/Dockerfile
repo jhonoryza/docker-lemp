@@ -31,6 +31,9 @@ RUN apk add --no-cache --virtual .build-deps \
     && docker-php-ext-enable imagick \
     && docker-php-ext-install \
         bcmath \
+        exif \
+        gd \
+        intl \
         curl \
         iconv \
         mbstring \
@@ -47,5 +50,16 @@ RUN apk add --no-cache --virtual .build-deps \
     && docker-php-ext-install gd \
     && curl -s https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin/ --filename=composer \
     && apk del -f .build-deps
+
+# Configure non-root user.
+RUN apk add --no-cache bash
+RUN apk --no-cache add shadow
+ARG PUID=1000
+ENV PUID ${PUID}
+ARG PGID=1000
+ENV PGID ${PGID}
+
+RUN groupmod -o -g ${PGID} www-data && \
+    usermod -o -u ${PUID} -g www-data www-data
 
 WORKDIR /var/www
